@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Math Quiz</title>
+    <style></style>
+  </head>
+  <body>
+    <div id="difficultyOp">
+      <button id="beginner">Beginner</button>
+      <button id="intermediate">Intermediate</button>
+      <button id="advanced">Advanced</button>
+    </div>
+
+    <div id="interactionDiv">
+      <label for="input">Input your answer below.</label>
+      <input id="input" type="text"/>
+      <label id="question"></label>
+      <button id="submit">Submit</button>
+      <label id="corrAnswer"></label>
+      <button id="nextQuestion"></button>
+      <label id="result" visibility="false"></label>
+      <button id="reset" visibility="false"></button>
+    </div>
+
+    <div id="scoreDiv">
+      <label id="score"></label>
+    </div>
+  </body>
+  <script>
+    (function quiz() {
+      state = {
+        level,
+        score,
+        difficulty,
+      };
+      ranges = {
+        beginner: { max: 50, min: -50, label: "Beginner" },
+        inter: { max: 1000, min: -1000, label: "Inter" },
+        hard: { max: 10000, min: -10000, label: "Hard" },
+      };
+
+      document
+        .getElementById("beginner")
+        .addEventListener("click", function () {
+          startQuiz("beginner");
+        });
+      document
+        .getElementById("intermediate")
+        .addEventListener("click", function () {
+          startQuiz("intermediate");
+        });
+      document
+        .getElementById("advanced")
+        .addEventListener("click", function () {
+          startQuiz("advanced");
+        });
+
+      function randQuestion(difficulty,ranges) {
+        let randNo =0,randNo1=0,randOp="",fullQuestion="",questionAns;
+        switch (difficulty) {
+          case "beginner":
+            randNo = randomNumber(ranges.beginner.max,ranges.beginner.min);
+            randOp=randOp();
+            randNo1 = randomNumber(ranges.beginner.max,ranges.beginner.min);
+            break;
+          case "intermediate":
+            randNo=randomNumber(ranges.inter.max,ranges,inter.min);
+            randOp=randOp();
+            randNo1=randomNumber(ranges.inter.max,ranges,inter.min);
+            break;
+          case "advanced":
+            randNo=randomNumber(ranges.hard.max,ranges.hard.min);
+            randOp=randOp();
+            randNo1=randomNumber(ranges.hard.max,ranges.hard.min);
+            break;
+        }
+        fullQuestion=randNo+randOp+randNo1;
+        questionAns=parseQuestion(fullQuestion);
+        return [fullQuestion, questionAns];
+      }
+
+      function parseQuestion(q){
+        return new Function(`return ${q}`)();
+      }
+
+      function randomNumber(max, min) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      function randOp() {
+        let operands = ["+", "-", "*", "/"];
+        let temp = randomNumber(0, operands.length);
+        return operands[temp];
+      }
+
+      function startQuiz(state) {
+        reset(state);
+        randQuestion(state.difficulty);
+      }
+
+      function reset(state) {
+        state.level = 0;
+        state.score = 0;
+        state.difficulty = "";
+      }
+
+      function submit() {}
+        document.getElementById("submit").addEventListener("click",function(){
+            document.getElementById("input")
+        })
+
+      function check() {}
+
+      function next() {}
+
+      function showScore() {}
+
+      function displayQuestion() {}
+    })();
+  </script>
+</html>
