@@ -4,42 +4,316 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Math Quiz</title>
+    <style>
+      :root {
+        --radius: 0.625rem;
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --border: oklch(0.922 0 0);
+        --ring: oklch(0.708 0 0);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: var(--background);
+        color: var(--foreground);
+      }
+
+      #app {
+        width: min(640px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 2rem;
+        background: var(--card);
+        color: var(--card-foreground);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 25px 50px rgba(15, 15, 15, 0.08);
+        position: relative;
+      }
+
+      #scoreDiv {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+        text-align: center;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .pillBadge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: var(--secondary);
+        color: var(--secondary-foreground);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .heroHeadline {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+        line-height: 1.1;
+      }
+
+      .heroText {
+        margin: 0;
+        font-size: 1.05rem;
+        color: var(--muted-foreground);
+      }
+
+      #difficultyOp {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+        min-width: 9rem;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        padding: 0.7rem 1.4rem;
+        font-size: 1rem;
+        font-weight: 600;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 10px 20px rgba(20, 20, 20, 0.15);
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 15px 25px rgba(20, 20, 20, 0.18);
+      }
+
+      button:disabled {
+        background: var(--muted);
+        color: var(--muted-foreground);
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      button.ghost {
+        background: var(--secondary);
+        color: var(--secondary-foreground);
+        border-color: var(--border);
+        box-shadow: none;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        font-size: 1rem;
+        background: var(--card);
+        color: var(--card-foreground);
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
+      }
+
+      .buttonRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+      }
+
+      #result {
+        font-weight: 600;
+      }
+
+      #result.correct {
+        color: oklch(0.6 0.17 162.48);
+      }
+
+      #result.incorrect {
+        color: oklch(0.704 0.191 22.216);
+      }
+
+      #corrAnswer,
+      #resetHint,
+      #questionHint {
+        color: var(--muted-foreground);
+        font-size: 0.95rem;
+      }
+
+      #resetHint {
+        font-style: italic;
+        margin: 0;
+        flex: 1;
+      }
+
+      .resetRow {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      #credits {
+        border-top: 1px solid var(--border);
+        padding-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--muted-foreground);
+        text-align: center;
+      }
+
+      #credits a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      #credits a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
-    <div id="difficultyOp">
-      <button id="beginner">Beginner</button>
-      <button id="intermediate">Intermediate</button>
-      <button id="advanced">Advanced</button>
-    </div>
+    <div id="app">
+      <div id="scoreDiv" class="hidden">Score: 0/0</div>
 
-    <div id="interactionDiv">
-      <label id="question">Choose a difficulty to start the quiz.</label>
-      <div>
-        <label for="input">Input your answer below.</label>
-      </div>
-      <input id="input" type="number" step="any" disabled />
-      <button id="submit" disabled>Submit</button>
-      <button id="nextQuestion" disabled>Next Question</button>
-      <button id="tryAgain" disabled>Try Again</button>
-      <button id="reset" disabled>Reset Quiz</button>
-      <div>
-        <label id="result"></label>
-      </div>
-      <div>
-        <label id="corrAnswer"></label>
-      </div>
-      <p id="resetHint">
-        Try Again repeats the current difficulty. Reset lets you pick a new one.
-      </p>
-    </div>
+      <section id="welcomeScreen" class="screen">
+        <div class="pillBadge">Sharpen Your Skills</div>
+        <h1 class="heroHeadline">Welcome to the Math Quiz</h1>
+        <p class="heroText">
+          Tackle ten quick-fire arithmetic questions. Pick your difficulty,
+          chase a perfect score, and challenge yourself again.
+        </p>
+        <div class="buttonRow">
+          <button id="startQuiz">Get Started</button>
+        </div>
+      </section>
 
-    <div id="scoreDiv">
-      <label id="score">Score: 0/0</label>
+      <section id="difficultyScreen" class="screen hidden">
+        <h2 class="heroHeadline">Select a difficulty</h2>
+        <p class="heroText">Beginner keeps things cozy, advanced gets spicy.</p>
+        <div id="difficultyOp">
+          <button data-level="beginner">Beginner</button>
+          <button data-level="intermediate">Intermediate</button>
+          <button data-level="advanced">Advanced</button>
+        </div>
+      </section>
+
+      <section id="quizScreen" class="screen hidden">
+        <div class="pillBadge" id="questionPill">Question 0</div>
+        <h2 class="heroHeadline" id="question">Select a difficulty to begin.</h2>
+        <p class="heroText" id="questionHint">
+          Enter your answer, submit, and keep the streak alive.
+        </p>
+        <input id="input" type="number" step="any" disabled />
+        <div class="buttonRow">
+          <button id="submit" disabled>Submit</button>
+          <button id="nextQuestion" disabled>Next Question</button>
+        </div>
+        <div id="result"></div>
+        <div id="corrAnswer"></div>
+        <div class="resetRow">
+          <p id="resetHint"></p>
+          <button id="reset" disabled>Reset Quiz</button>
+        </div>
+      </section>
+
+      <section id="finalScreen" class="screen hidden">
+        <div class="pillBadge" id="finalLevel"></div>
+        <p class="heroHeadline" id="finalScore"></p>
+        <p class="heroText" id="finalSummary"></p>
+        <div class="buttonRow">
+          <button id="tryAgain" disabled>Try Again</button>
+          <button id="finalChangeDifficulty">Change Difficulty</button>
+          <button id="finalGoHome" class="ghost">Back to Welcome</button>
+        </div>
+      </section>
+
+      <footer id="credits">
+        Built by <a href="https://github.com/2ntenapph" target="_blank" rel="noreferrer">2ntenapph</a>
+        &amp;
+        <a href="https://github.com/SirSterling" target="_blank" rel="noreferrer">SirSterling</a>.
+        Source on
+        <a href="https://github.com/2ntenapph/as13" target="_blank" rel="noreferrer">GitHub</a>.
+      </footer>
     </div>
   </body>
   <script>
     (function quiz() {
-      const QUESTION_LIMIT = 10;
+      const LIMIT = 10;
+      const ranges = {
+        beginner: { min: -50, max: 50, label: "Beginner" },
+        intermediate: { min: -1000, max: 1000, label: "Intermediate" },
+        advanced: { min: -10000, max: 10000, label: "Advanced" },
+      };
+
+      const screens = {
+        welcome: document.getElementById("welcomeScreen"),
+        difficulty: document.getElementById("difficultyScreen"),
+        quiz: document.getElementById("quizScreen"),
+        final: document.getElementById("finalScreen"),
+      };
+
+      const els = {
+        score: document.getElementById("scoreDiv"),
+        question: document.getElementById("question"),
+        questionHint: document.getElementById("questionHint"),
+        questionPill: document.getElementById("questionPill"),
+        input: document.getElementById("input"),
+        submit: document.getElementById("submit"),
+        next: document.getElementById("nextQuestion"),
+        reset: document.getElementById("reset"),
+        result: document.getElementById("result"),
+        corrAnswer: document.getElementById("corrAnswer"),
+        resetHint: document.getElementById("resetHint"),
+        finalSummary: document.getElementById("finalSummary"),
+        finalScore: document.getElementById("finalScore"),
+        finalLevel: document.getElementById("finalLevel"),
+        tryAgain: document.getElementById("tryAgain"),
+        start: document.getElementById("startQuiz"),
+        changeDifficulty: document.getElementById("finalChangeDifficulty"),
+        goHome: document.getElementById("finalGoHome"),
+      };
 
       const state = {
         level: 0,
@@ -49,226 +323,224 @@
         lastDifficulty: null,
         question: "",
         answer: null,
-        limit: QUESTION_LIMIT,
       };
 
-      const ranges = {
-        beginner: { max: 50, min: -50 },
-        intermediate: { max: 1000, min: -1000 },
-        advanced: { max: 10000, min: -10000 },
-      };
+      const difficultyButtons = document.querySelectorAll("#difficultyOp button");
 
-      const difficultyButtons = {
-        beginner: document.getElementById("beginner"),
-        intermediate: document.getElementById("intermediate"),
-        advanced: document.getElementById("advanced"),
-      };
+      els.start.addEventListener("click", () => {
+        resetState(false);
+        showScreen("difficulty");
+      });
 
-      const elements = {
-        input: document.getElementById("input"),
-        question: document.getElementById("question"),
-        submit: document.getElementById("submit"),
-        nextQuestion: document.getElementById("nextQuestion"),
-        tryAgain: document.getElementById("tryAgain"),
-        reset: document.getElementById("reset"),
-        corrAnswer: document.getElementById("corrAnswer"),
-        result: document.getElementById("result"),
-        score: document.getElementById("score"),
-      };
+      els.changeDifficulty.addEventListener("click", () => {
+        resetState(false);
+        showScreen("difficulty");
+      });
 
-      Object.keys(difficultyButtons).forEach(function (level) {
-        difficultyButtons[level].addEventListener("click", function () {
-          startQuiz(level);
+      els.goHome.addEventListener("click", () => {
+        resetState(false);
+        showScreen("welcome");
+      });
+
+      els.reset.addEventListener("click", () => {
+        resetState(false);
+        showScreen("difficulty");
+      });
+
+      els.tryAgain.addEventListener("click", () => {
+        if (state.lastDifficulty) startQuiz(state.lastDifficulty);
+      });
+
+      els.submit.addEventListener("click", submitAnswer);
+      els.next.addEventListener("click", goNext);
+      els.input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") submitAnswer();
+      });
+
+      difficultyButtons.forEach((btn) => {
+        btn.addEventListener("click", () => startQuiz(btn.dataset.level));
+      });
+
+      function showScreen(target) {
+        Object.entries(screens).forEach(([key, el]) => {
+          el.classList.toggle("hidden", key !== target);
         });
-      });
-
-      elements.submit.addEventListener("click", submit);
-      elements.nextQuestion.addEventListener("click", next);
-      elements.tryAgain.addEventListener("click", tryAgain);
-      elements.reset.addEventListener("click", function () {
-        initializeState(false);
-      });
-      elements.input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-          submit();
-        }
-      });
-
-      function setDifficultyButtonsDisabled(disabled) {
-        Object.values(difficultyButtons).forEach(function (button) {
-          button.disabled = disabled;
-        });
+        els.score.classList.toggle("hidden", target !== "quiz");
+        updateResetHint(target === "quiz");
       }
 
-      function initializeState(preserveLastDifficulty) {
+      function resetState(preserveDifficulty) {
         state.level = 0;
         state.score = 0;
         state.answered = 0;
-        state.difficulty = null;
         state.question = "";
         state.answer = null;
-        if (!preserveLastDifficulty) {
-          state.lastDifficulty = null;
-        }
-        elements.question.textContent = "Choose a difficulty to start the quiz.";
-        elements.input.value = "";
-        elements.input.disabled = true;
-        elements.submit.disabled = true;
-        elements.nextQuestion.disabled = true;
-        elements.tryAgain.disabled = !state.lastDifficulty;
-        elements.reset.disabled = true;
-        elements.result.textContent = "";
-        elements.corrAnswer.textContent = "";
-        setDifficultyButtonsDisabled(false);
-        showScore();
+        if (!preserveDifficulty) state.lastDifficulty = null;
+        els.question.textContent = "Select a difficulty to begin.";
+        els.questionHint.textContent =
+          "Enter your answer, submit, and keep the streak alive.";
+        setQuestionPill("Question 0");
+        setNextButtonLabel(false);
+        els.input.value = "";
+        toggleInputs({ input: true, submit: true, next: true, reset: true });
+        els.tryAgain.disabled = !state.lastDifficulty;
+        setResultMessage("", true, true);
+        els.corrAnswer.textContent = "";
+        difficultyButtons.forEach((btn) => (btn.disabled = false));
+        updateScore();
       }
 
-      function startQuiz(selectedDifficulty) {
-        initializeState(true);
-        state.difficulty = selectedDifficulty;
-        state.lastDifficulty = selectedDifficulty;
-        setDifficultyButtonsDisabled(true);
-        elements.input.disabled = false;
-        elements.submit.disabled = false;
-        elements.reset.disabled = false;
-        elements.tryAgain.disabled = true;
-        elements.result.textContent = "";
-        elements.corrAnswer.textContent = "";
-        displayQuestion();
-        showScore();
+      function startQuiz(level) {
+        resetState(true);
+        state.difficulty = level;
+        state.lastDifficulty = level;
+        difficultyButtons.forEach((btn) => (btn.disabled = true));
+        toggleInputs({ input: false, submit: false, reset: false });
+        showScreen("quiz");
+        renderQuestion();
       }
 
-      function submit() {
-        if (!state.difficulty || !state.question) {
-          elements.result.textContent = "Select a difficulty to start.";
+      function submitAnswer() {
+        if (!state.question) {
+          setResultMessage("Select a difficulty to start.", false, true);
           return;
         }
-        const raw = elements.input.value.trim();
-        if (!raw) {
-          elements.result.textContent = "Please enter an answer.";
+        const value = els.input.value.trim();
+        if (!value) {
+          setResultMessage("Please enter an answer.", false, true);
           return;
         }
-        const playerAnswer = Number(raw);
+        const playerAnswer = Number(value);
         if (Number.isNaN(playerAnswer)) {
-          elements.result.textContent = "Enter a valid number.";
+          setResultMessage("Enter a valid number.", false, true);
           return;
         }
-        const isCorrect = check(playerAnswer);
+
+        const correct = checkAnswer(playerAnswer);
         state.answered += 1;
-        elements.result.textContent = isCorrect ? "Correct!" : "Incorrect.";
-        elements.corrAnswer.textContent = `Answer: ${state.answer}`;
-        elements.submit.disabled = true;
-        elements.input.disabled = true;
-        elements.nextQuestion.disabled = false;
-        showScore();
+        setResultMessage(correct ? "Correct!" : "Incorrect.", correct);
+        els.corrAnswer.textContent = `Answer: ${state.answer}`;
+        toggleInputs({ input: true, submit: true });
+        els.next.disabled = false;
+        updateScore();
       }
 
-      function next() {
-        if (!state.lastDifficulty) {
-          return;
-        }
-        if (state.answered >= state.limit) {
+      function goNext() {
+        if (!state.lastDifficulty) return;
+        if (state.answered >= LIMIT) {
           endQuiz();
           return;
         }
-        if (!state.difficulty) {
-          state.difficulty = state.lastDifficulty;
-        }
-        elements.input.disabled = false;
-        elements.submit.disabled = false;
-        elements.nextQuestion.disabled = true;
-        displayQuestion();
-      }
-
-      function tryAgain() {
-        if (!state.lastDifficulty) {
-          return;
-        }
-        startQuiz(state.lastDifficulty);
-      }
-
-      function showScore() {
-        const denominator = state.lastDifficulty ? state.limit : 0;
-        elements.score.textContent = `Score: ${state.score}/${denominator}`;
+        state.difficulty = state.difficulty || state.lastDifficulty;
+        toggleInputs({ input: false, submit: false, next: true });
+        renderQuestion();
       }
 
       function endQuiz() {
-        const finalScore = `Score: ${state.score}/${state.limit}`;
-        elements.question.textContent = `Quiz complete! ${finalScore}.`;
-        elements.nextQuestion.disabled = true;
-        elements.submit.disabled = true;
-        elements.input.disabled = true;
-        elements.tryAgain.disabled = false;
+        const label = ranges[state.lastDifficulty]?.label ?? "Selected";
+        els.finalLevel.textContent = `${label} level`;
+        els.finalScore.textContent = `${state.score}/${LIMIT} correct`;
+        els.finalSummary.textContent =
+          "Ready for another round or want to switch gears?";
+        els.tryAgain.disabled = !state.lastDifficulty;
+        toggleInputs({ input: true, submit: true, next: true });
+        setQuestionPill("End Quiz");
         state.difficulty = null;
-        setDifficultyButtonsDisabled(false);
-        showScore();
+        difficultyButtons.forEach((btn) => (btn.disabled = false));
+        updateScore();
+        showScreen("final");
       }
 
-      function displayQuestion() {
-        if (!state.difficulty) {
-          return;
-        }
-        if (state.level >= state.limit) {
+      function renderQuestion() {
+        if (!state.difficulty) return;
+        if (state.level >= LIMIT) {
           endQuiz();
           return;
         }
-        const [fullQuestion, questionAns] = randQuestion(state.difficulty);
-        state.question = fullQuestion;
-        state.answer = questionAns;
+        const [text, answer] = buildQuestion(state.difficulty);
+        state.question = text;
+        state.answer = answer;
         state.level += 1;
-        elements.question.textContent = `Question ${state.level}: ${formatQuestion(fullQuestion)} = ?`;
-        elements.input.value = "";
-        elements.result.textContent = "";
-        elements.corrAnswer.textContent = "";
-        elements.input.focus();
+        const final = state.level === LIMIT;
+        setQuestionPill(final ? "Final Question" : `Question ${state.level}`);
+        setNextButtonLabel(final);
+        els.question.textContent = `${formatQuestion(text)} = ?`;
+        els.input.value = "";
+        setResultMessage("", true, true);
+        els.corrAnswer.textContent = "";
+        els.input.focus();
       }
 
-      function formatQuestion(fullQuestion) {
-        return fullQuestion.replace(/([+\-*/])/g, " $1 ");
-      }
-
-      function randQuestion(difficulty) {
-        const range = ranges[difficulty];
-        if (!range) {
-          throw new Error("Unknown difficulty selected.");
+      function buildQuestion(level) {
+        const range = ranges[level];
+        if (!range) throw new Error("Unknown level");
+        const op = randomOp();
+        const left = randomInt(range.min, range.max);
+        let right = randomInt(range.min, range.max);
+        while (op === "/" && right === 0) {
+          right = randomInt(range.min, range.max);
         }
-        const operator = randOp();
-        const randNo = randomNumber(range.min, range.max);
-        let randNo1 = randomNumber(range.min, range.max);
-        while (operator === "/" && randNo1 === 0) {
-          randNo1 = randomNumber(range.min, range.max);
-        }
-        const fullQuestion = `${randNo}${operator}${randNo1}`;
-        const questionAns = parseQuestion(fullQuestion);
-        return [fullQuestion, questionAns];
+        const text = `${left}${op}${right}`;
+        return [text, Function(`return ${text}`)()];
       }
 
-      function parseQuestion(q) {
-        return new Function(`return ${q}`)();
+      function formatQuestion(text) {
+        return text.replace(/([+\-*/])/g, " $1 ");
       }
 
-      function randomNumber(min, max) {
-        const lowest = Math.min(min, max);
-        const highest = Math.max(min, max);
-        return Math.floor(Math.random() * (highest - lowest + 1) + lowest);
+      function toggleInputs({ input, submit, next, reset }) {
+        if (typeof input === "boolean") els.input.disabled = input;
+        if (typeof submit === "boolean") els.submit.disabled = submit;
+        if (typeof next === "boolean") els.next.disabled = next;
+        if (typeof reset === "boolean") els.reset.disabled = reset;
       }
 
-      function randOp() {
-        const operands = ["+", "-", "*", "/"];
-        const temp = randomNumber(0, operands.length - 1);
-        return operands[temp];
+      function updateResetHint(show) {
+        if (!els.resetHint) return;
+        els.resetHint.textContent = show
+          ? "Reset sends you back to choose another difficulty."
+          : "";
+        els.resetHint.classList.toggle("hidden", !show);
       }
 
-      function check(answerValue) {
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      function randomOp() {
+        const ops = ["+", "-", "*", "/"];
+        return ops[randomInt(0, ops.length - 1)];
+      }
+
+      function checkAnswer(value) {
         const tolerance = 0.01;
-        const isCorrect = Math.abs(answerValue - state.answer) <= tolerance;
-        if (isCorrect) {
-          state.score += 1;
-        }
+        const isCorrect = Math.abs(value - state.answer) <= tolerance;
+        if (isCorrect) state.score += 1;
         return isCorrect;
       }
 
-      initializeState(false);
+      function setResultMessage(message, isCorrect, neutral) {
+        els.result.textContent = message;
+        els.result.classList.remove("correct", "incorrect");
+        if (neutral) return;
+        els.result.classList.add(isCorrect ? "correct" : "incorrect");
+      }
+
+      function setQuestionPill(text) {
+        if (els.questionPill) els.questionPill.textContent = text;
+      }
+
+      function setNextButtonLabel(isFinal) {
+        els.next.textContent = isFinal ? "End Quiz" : "Next Question";
+      }
+
+      function updateScore() {
+        const total = state.lastDifficulty ? LIMIT : 0;
+        els.score.textContent = `Score: ${state.score}/${total}`;
+      }
+
+      resetState(false);
+      showScreen("welcome");
     })();
   </script>
 </html>
