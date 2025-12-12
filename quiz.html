@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Math Quiz</title>
-    <style></style>
   </head>
   <body>
     <div id="difficultyOp">
@@ -14,110 +13,262 @@
     </div>
 
     <div id="interactionDiv">
-      <label for="input">Input your answer below.</label>
-      <input id="input" type="text"/>
-      <label id="question"></label>
-      <button id="submit">Submit</button>
-      <label id="corrAnswer"></label>
-      <button id="nextQuestion"></button>
-      <label id="result" visibility="false"></label>
-      <button id="reset" visibility="false"></button>
+      <label id="question">Choose a difficulty to start the quiz.</label>
+      <div>
+        <label for="input">Input your answer below.</label>
+      </div>
+      <input id="input" type="number" step="any" disabled />
+      <button id="submit" disabled>Submit</button>
+      <button id="nextQuestion" disabled>Next Question</button>
+      <button id="tryAgain" disabled>Try Again</button>
+      <button id="reset" disabled>Reset Quiz</button>
+      <div>
+        <label id="result"></label>
+      </div>
+      <div>
+        <label id="corrAnswer"></label>
+      </div>
+      <p id="resetHint">
+        Try Again repeats the current difficulty. Reset lets you pick a new one.
+      </p>
     </div>
 
     <div id="scoreDiv">
-      <label id="score"></label>
+      <label id="score">Score: 0/0</label>
     </div>
   </body>
   <script>
     (function quiz() {
-      state = {
-        level,
-        score,
-        difficulty,
-      };
-      ranges = {
-        beginner: { max: 50, min: -50, label: "Beginner" },
-        inter: { max: 1000, min: -1000, label: "Inter" },
-        hard: { max: 10000, min: -10000, label: "Hard" },
+      const QUESTION_LIMIT = 10;
+
+      const state = {
+        level: 0,
+        score: 0,
+        answered: 0,
+        difficulty: null,
+        lastDifficulty: null,
+        question: "",
+        answer: null,
+        limit: QUESTION_LIMIT,
       };
 
-      document
-        .getElementById("beginner")
-        .addEventListener("click", function () {
-          startQuiz("beginner");
-        });
-      document
-        .getElementById("intermediate")
-        .addEventListener("click", function () {
-          startQuiz("intermediate");
-        });
-      document
-        .getElementById("advanced")
-        .addEventListener("click", function () {
-          startQuiz("advanced");
-        });
+      const ranges = {
+        beginner: { max: 50, min: -50 },
+        intermediate: { max: 1000, min: -1000 },
+        advanced: { max: 10000, min: -10000 },
+      };
 
-      function randQuestion(difficulty,ranges) {
-        let randNo =0,randNo1=0,randOp="",fullQuestion="",questionAns;
-        switch (difficulty) {
-          case "beginner":
-            randNo = randomNumber(ranges.beginner.max,ranges.beginner.min);
-            randOp=randOp();
-            randNo1 = randomNumber(ranges.beginner.max,ranges.beginner.min);
-            break;
-          case "intermediate":
-            randNo=randomNumber(ranges.inter.max,ranges,inter.min);
-            randOp=randOp();
-            randNo1=randomNumber(ranges.inter.max,ranges,inter.min);
-            break;
-          case "advanced":
-            randNo=randomNumber(ranges.hard.max,ranges.hard.min);
-            randOp=randOp();
-            randNo1=randomNumber(ranges.hard.max,ranges.hard.min);
-            break;
+      const difficultyButtons = {
+        beginner: document.getElementById("beginner"),
+        intermediate: document.getElementById("intermediate"),
+        advanced: document.getElementById("advanced"),
+      };
+
+      const elements = {
+        input: document.getElementById("input"),
+        question: document.getElementById("question"),
+        submit: document.getElementById("submit"),
+        nextQuestion: document.getElementById("nextQuestion"),
+        tryAgain: document.getElementById("tryAgain"),
+        reset: document.getElementById("reset"),
+        corrAnswer: document.getElementById("corrAnswer"),
+        result: document.getElementById("result"),
+        score: document.getElementById("score"),
+      };
+
+      Object.keys(difficultyButtons).forEach(function (level) {
+        difficultyButtons[level].addEventListener("click", function () {
+          startQuiz(level);
+        });
+      });
+
+      elements.submit.addEventListener("click", submit);
+      elements.nextQuestion.addEventListener("click", next);
+      elements.tryAgain.addEventListener("click", tryAgain);
+      elements.reset.addEventListener("click", function () {
+        initializeState(false);
+      });
+      elements.input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          submit();
         }
-        fullQuestion=randNo+randOp+randNo1;
-        questionAns=parseQuestion(fullQuestion);
+      });
+
+      function setDifficultyButtonsDisabled(disabled) {
+        Object.values(difficultyButtons).forEach(function (button) {
+          button.disabled = disabled;
+        });
+      }
+
+      function initializeState(preserveLastDifficulty) {
+        state.level = 0;
+        state.score = 0;
+        state.answered = 0;
+        state.difficulty = null;
+        state.question = "";
+        state.answer = null;
+        if (!preserveLastDifficulty) {
+          state.lastDifficulty = null;
+        }
+        elements.question.textContent = "Choose a difficulty to start the quiz.";
+        elements.input.value = "";
+        elements.input.disabled = true;
+        elements.submit.disabled = true;
+        elements.nextQuestion.disabled = true;
+        elements.tryAgain.disabled = !state.lastDifficulty;
+        elements.reset.disabled = true;
+        elements.result.textContent = "";
+        elements.corrAnswer.textContent = "";
+        setDifficultyButtonsDisabled(false);
+        showScore();
+      }
+
+      function startQuiz(selectedDifficulty) {
+        initializeState(true);
+        state.difficulty = selectedDifficulty;
+        state.lastDifficulty = selectedDifficulty;
+        setDifficultyButtonsDisabled(true);
+        elements.input.disabled = false;
+        elements.submit.disabled = false;
+        elements.reset.disabled = false;
+        elements.tryAgain.disabled = true;
+        elements.result.textContent = "";
+        elements.corrAnswer.textContent = "";
+        displayQuestion();
+        showScore();
+      }
+
+      function submit() {
+        if (!state.difficulty || !state.question) {
+          elements.result.textContent = "Select a difficulty to start.";
+          return;
+        }
+        const raw = elements.input.value.trim();
+        if (!raw) {
+          elements.result.textContent = "Please enter an answer.";
+          return;
+        }
+        const playerAnswer = Number(raw);
+        if (Number.isNaN(playerAnswer)) {
+          elements.result.textContent = "Enter a valid number.";
+          return;
+        }
+        const isCorrect = check(playerAnswer);
+        state.answered += 1;
+        elements.result.textContent = isCorrect ? "Correct!" : "Incorrect.";
+        elements.corrAnswer.textContent = `Answer: ${state.answer}`;
+        elements.submit.disabled = true;
+        elements.input.disabled = true;
+        elements.nextQuestion.disabled = false;
+        showScore();
+      }
+
+      function next() {
+        if (!state.lastDifficulty) {
+          return;
+        }
+        if (state.answered >= state.limit) {
+          endQuiz();
+          return;
+        }
+        if (!state.difficulty) {
+          state.difficulty = state.lastDifficulty;
+        }
+        elements.input.disabled = false;
+        elements.submit.disabled = false;
+        elements.nextQuestion.disabled = true;
+        displayQuestion();
+      }
+
+      function tryAgain() {
+        if (!state.lastDifficulty) {
+          return;
+        }
+        startQuiz(state.lastDifficulty);
+      }
+
+      function showScore() {
+        const denominator = state.lastDifficulty ? state.limit : 0;
+        elements.score.textContent = `Score: ${state.score}/${denominator}`;
+      }
+
+      function endQuiz() {
+        const finalScore = `Score: ${state.score}/${state.limit}`;
+        elements.question.textContent = `Quiz complete! ${finalScore}.`;
+        elements.nextQuestion.disabled = true;
+        elements.submit.disabled = true;
+        elements.input.disabled = true;
+        elements.tryAgain.disabled = false;
+        state.difficulty = null;
+        setDifficultyButtonsDisabled(false);
+        showScore();
+      }
+
+      function displayQuestion() {
+        if (!state.difficulty) {
+          return;
+        }
+        if (state.level >= state.limit) {
+          endQuiz();
+          return;
+        }
+        const [fullQuestion, questionAns] = randQuestion(state.difficulty);
+        state.question = fullQuestion;
+        state.answer = questionAns;
+        state.level += 1;
+        elements.question.textContent = `Question ${state.level}: ${formatQuestion(fullQuestion)} = ?`;
+        elements.input.value = "";
+        elements.result.textContent = "";
+        elements.corrAnswer.textContent = "";
+        elements.input.focus();
+      }
+
+      function formatQuestion(fullQuestion) {
+        return fullQuestion.replace(/([+\-*/])/g, " $1 ");
+      }
+
+      function randQuestion(difficulty) {
+        const range = ranges[difficulty];
+        if (!range) {
+          throw new Error("Unknown difficulty selected.");
+        }
+        const operator = randOp();
+        const randNo = randomNumber(range.min, range.max);
+        let randNo1 = randomNumber(range.min, range.max);
+        while (operator === "/" && randNo1 === 0) {
+          randNo1 = randomNumber(range.min, range.max);
+        }
+        const fullQuestion = `${randNo}${operator}${randNo1}`;
+        const questionAns = parseQuestion(fullQuestion);
         return [fullQuestion, questionAns];
       }
 
-      function parseQuestion(q){
+      function parseQuestion(q) {
         return new Function(`return ${q}`)();
       }
 
-      function randomNumber(max, min) {
-        return Math.floor(Math.random() * (max - min + 1) + min);
+      function randomNumber(min, max) {
+        const lowest = Math.min(min, max);
+        const highest = Math.max(min, max);
+        return Math.floor(Math.random() * (highest - lowest + 1) + lowest);
       }
 
       function randOp() {
-        let operands = ["+", "-", "*", "/"];
-        let temp = randomNumber(0, operands.length);
+        const operands = ["+", "-", "*", "/"];
+        const temp = randomNumber(0, operands.length - 1);
         return operands[temp];
       }
 
-      function startQuiz(state) {
-        reset(state);
-        randQuestion(state.difficulty);
+      function check(answerValue) {
+        const tolerance = 0.01;
+        const isCorrect = Math.abs(answerValue - state.answer) <= tolerance;
+        if (isCorrect) {
+          state.score += 1;
+        }
+        return isCorrect;
       }
 
-      function reset(state) {
-        state.level = 0;
-        state.score = 0;
-        state.difficulty = "";
-      }
-
-      function submit() {}
-        document.getElementById("submit").addEventListener("click",function(){
-            document.getElementById("input")
-        })
-
-      function check() {}
-
-      function next() {}
-
-      function showScore() {}
-
-      function displayQuestion() {}
+      initializeState(false);
     })();
   </script>
 </html>
